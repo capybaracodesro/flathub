@@ -1,0 +1,46 @@
+app-id: eu.capybaracode.FilenameNinja
+runtime: org.kde.Platform
+runtime-version: "6.11"
+sdk: org.kde.Sdk
+# PySide6 for the KDE runtime, built from source by the Qt Company on Flathub.
+# Its version must match runtime-version.
+base: io.qt.PySide.BaseApp
+base-version: "6.11"
+command: filename-ninja
+cleanup-commands:
+  - /app/cleanup-BaseApp.sh
+
+finish-args:
+  - --share=ipc
+  - --socket=wayland
+  - --socket=fallback-x11
+  - --device=dri
+  # A bulk renamer needs to rename files in place, next to each other. Files
+  # handed over by the file chooser portal (/run/user/<uid>/doc/...) cannot
+  # be renamed, so the app needs direct access to the user's files and to
+  # removable drives.
+  - --filesystem=home
+  - --filesystem=/media
+  - --filesystem=/run/media
+  - --filesystem=/mnt
+
+modules:
+  - name: filename-ninja
+    buildsystem: simple
+    build-commands:
+      - pip3 install --no-deps --no-build-isolation --prefix=${FLATPAK_DEST} .
+      - install -Dm644 flatpak/${FLATPAK_ID}.desktop ${FLATPAK_DEST}/share/applications/${FLATPAK_ID}.desktop
+      - install -Dm644 flatpak/${FLATPAK_ID}.metainfo.xml ${FLATPAK_DEST}/share/metainfo/${FLATPAK_ID}.metainfo.xml
+      - install -Dm644 src/filename_ninja/resources/icons/filename_ninja_512x512.png ${FLATPAK_DEST}/share/icons/hicolor/512x512/apps/${FLATPAK_ID}.png
+      - install -Dm644 LICENSE.txt ${FLATPAK_DEST}/share/licenses/${FLATPAK_ID}/LICENSE.txt
+    sources:
+      # flatpak/build-local.sh replaces this git source with the working tree.
+      - type: git
+        url: https://gitlab.com/capybara-code/filename-ninja.git
+        tag: v1.1.7
+        # Add the commit hash of the tag once it exists:
+        #   git rev-parse v1.1.7^{commit}
+        commit: 8e0df288ac60e0e8efd2ee8d7964744d59b8b827
+        x-checker-data:
+          type: git
+          tag-pattern: ^v([\d.]+)$
